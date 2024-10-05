@@ -11,6 +11,9 @@ groq = "^0.11.0"
 openai = "^1.51.0"
 toolhouse = "^1.2.1"
 python-dotenv = "^1.0.1"
+byaldi = {git = "git@github.com:Athe-kunal/byaldi.git"}
+ipykernel = "^6.29.5"
+pypdf2 = "^3.0.1"
 
 
 [build-system]

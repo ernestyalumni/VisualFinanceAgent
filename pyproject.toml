@@ -1,0 +1,18 @@
+[tool.poetry]
+name = "visualfinanceagent"
+version = "0.1.0"
+description = "Understand visually long finance pdfs and reports"
+authors = ["Your Name <you@example.com>"]
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.10"
+groq = "^0.11.0"
+openai = "^1.51.0"
+toolhouse = "^1.2.1"
+python-dotenv = "^1.0.1"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"

@@ -56,6 +56,14 @@ class VisionFinancePipeLine(dspy.Module):
         pass
     
     def manager_response(self,manager_response_list,query_translator, user_query):
+        """
+        @param manager_response_list: list of responses from the manager agent
+        This is typically a List[str] such that each element is a text summary
+        of each image.
+        @param query_translator: A refined and thoroughly explicit and detailed
+        version of the original user query.
+        @param user_query: the original user query
+        """
         pass
     
     async def __call__(self,user_query:str):

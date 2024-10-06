@@ -4,6 +4,7 @@ from PIL import Image
 import requests
 from io import BytesIO
 import base64
+from typing import List
 
 def expand_query(user_query):
     client = Groq(
@@ -59,6 +60,48 @@ def evaluate_image_relevance(query, image):
 
     relevance = chat_completion.choices[0].message.content.strip()
     return relevance
+
+def evaluate_multiple_text_relevance(
+    query: str,
+    texts: List[str],
+    model_name="llama-3.1-70b-versatile"):
+    client = Groq(
+        api_key=os.environ.get("GROQ_API_KEY"),
+    )
+
+    # Aggregate texts into a single string
+    aggregated_text = " ".join(texts)
+
+    system_content = (
+        "You are an expert in evaluating multiple pieces of text for relevance. "
+        "You are also an expert in composing text summaries that only includes "
+        "important points, directly relevant details to a given query and "
+        "nothing else at all. You do not provide any other information. Your "
+        "task is to take a given text that is an aggregation of multiple texts, "
+        "and compose a single text summary that is relevant to the user's query. "
+        "Do not provide any other explanation or text for anything with little "
+        "or no relevancy to the query."
+    )
+
+    user_content = \
+        f"Summarize this text with statements only relevant to the query: '{query}'? Text: '{aggregated_text}'"
+
+    chat_completion = client.chat.completions.create(
+        messages=[
+            {
+                "role": "system",
+                "content": system_content
+            },
+            {
+                "role": "user",
+                "content": user_content
+            }
+        ],
+        model=model_name,
+    )
+
+    summary = chat_completion.choices[0].message.content.strip()
+    return summary
 
 def main():
     user_query = "asia real estate investments"

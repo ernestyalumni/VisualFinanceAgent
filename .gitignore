@@ -163,3 +163,4 @@ cython_debug/
 finance_data
 .env
 output_json_files
+.byaldi

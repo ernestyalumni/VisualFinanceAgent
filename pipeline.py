@@ -21,6 +21,7 @@ class PipeLine(dspy.Module):
         return search_index
     
     def __call__(self,user_query:str):
+        #Translate the simple user query to better query
         query_translator = self.query_translator(user_query)
         
         relevant_summaries = self.summary_index.invoke(query_translator)
@@ -29,6 +30,7 @@ class PipeLine(dspy.Module):
         for rs in relevant_summaries:
             summaries+=rs.page_content + "\n"
         
+        #Based on relevant summaries, it translates the user query into three enriched queries
         enriched_queries = self.query_enrichment(user_query, query_translator, summaries)
         
         relevant_img_results = []

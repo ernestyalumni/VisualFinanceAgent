@@ -84,6 +84,14 @@ class VisionFinancePipeLine(dspy.Module):
         return chat_completion.choices[0].message.content
     
     def manager_response(self, manager_response_list, query_translator, user_query):
+        """
+        @param manager_response_list: list of responses from the manager agent
+        This is typically a List[str] such that each element is a text summary
+        of each image.
+        @param query_translator: A refined and thoroughly explicit and detailed
+        version of the original user query.
+        @param user_query: the original user query
+        """
         summaries_with_ids = [f"Summary {i}: {summary}" for i, summary in enumerate(manager_response_list)]
         summaries_text = "\n\n".join(summaries_with_ids)
         
@@ -100,7 +108,7 @@ class VisionFinancePipeLine(dspy.Module):
             ],
             model="llama-3.1-70b-versatile",
         )
-        
+
         relevant_summary_ids = chat_completion.choices[0].message.content.strip()
         return [int(id.strip()) for id in relevant_summary_ids.split(',')]
     

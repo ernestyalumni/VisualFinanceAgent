@@ -5,6 +5,7 @@ import json
 from langchain.schema import Document
 from langchain_community.vectorstores import FAISS
 from langchain_huggingface import HuggingFaceEmbeddings
+from query_utils import query_translator, query_enrichment
 import collections
 
 QueryImgTuple = collections.namedtuple("QueryImgTuple",['query','image_base64'])
@@ -21,15 +22,15 @@ class PipeLine(dspy.Module):
         return search_index
     
     def __call__(self,user_query:str):
-        query_translator = self.query_translator(user_query)
+        translated_query = query_translator(user_query)
         
-        relevant_summaries = self.summary_index.invoke(query_translator)
+        relevant_summaries = self.summary_index.invoke(translated_query)
         
         summaries = ""
         for rs in relevant_summaries:
             summaries+=rs.page_content + "\n"
         
-        enriched_queries = self.query_enrichment(user_query, query_translator, summaries)
+        enriched_queries = query_enrichment(user_query, translated_query, summaries)
         
         relevant_img_results = []
         
@@ -39,7 +40,7 @@ class PipeLine(dspy.Module):
                 QueryImgTuple(query=eq,image_base64=[i['base64'] for i in relevant_imgs])
             )
 
-        return query_translator, summaries, relevant_img_results
+        return translated_query, summaries, relevant_img_results
     
 def _get_summary_index(path):
     model_name = "sentence-transformers/all-mpnet-base-v2"

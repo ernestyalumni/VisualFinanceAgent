@@ -7,6 +7,8 @@ from langchain_community.vectorstores import FAISS
 from langchain_huggingface import HuggingFaceEmbeddings
 import collections
 from groq import AsyncGroq
+from groq import Groq
+
 
 QueryImgTuple = collections.namedtuple("QueryImgTuple",['query','image_base64'])
 
@@ -50,13 +52,58 @@ class VisionFinancePipeLine(dspy.Module):
         return completion.choices[0].message.content
     
     def query_translator(self,user_query):
-        pass
+        completion = self.groq_client.chat.completions.create(
+        messages=[
+            {
+                "role": "system",
+                "content": "You are an expert in clarifying and expanding investment and consulting queries. Your task is to take a brief user query and generate a well-formed, detailed sentence that provides more context and depth. Focus on creating a full sentence with proper grammar that explores the main aspect of the original query. Return only the expanded query, nothing else."
+            },
+            {
+                "role": "user",
+                "content": f"Please expand the following query into a detailed sentence: '{user_query}'"
+            }
+        ],
+        model="llama-3.1-70b-versatile",
+    )
+        return completion.choices[0].message.content
     
     def query_enrichment(self, user_query, query_translator, summaries):
-        pass
+        chat_completion = self.groq_client.chat.completions.create(
+        messages=[
+            {
+                "role": "system",
+                "content": "You are an expert in generating enriched queries based on original queries, translated queries, and relevant summaries. Your task is to generate 3 enriched queries that explore different aspects of the topic. Return only the list of 3 enriched queries, separated by newlines."
+            },
+            {
+                "role": "user",
+                "content": f"Original query: '{user_query}'\nTranslated query: '{query_translator}'\nRelevant summaries: {summaries}\n\nPlease generate 3 enriched queries based on this information."
+            }
+        ],
+        model="llama-3.1-70b-versatile",
+    )
+        return chat_completion.choices[0].message.content
     
-    def manager_response(self,manager_response_list,query_translator, user_query):
-        pass
+    def manager_response(self, manager_response_list, query_translator, user_query):
+        summaries_with_ids = [f"Summary {i}: {summary}" for i, summary in enumerate(manager_response_list)]
+        summaries_text = "\n\n".join(summaries_with_ids)
+        
+        chat_completion = self.groq_client.chat.completions.create(
+            messages=[
+                {
+                    "role": "system",
+                    "content": "You are an expert in evaluating the relevance of information to user queries. Your task is to analyze a list of summaries and determine which ones are most relevant to the user's original query and the translated query. Return only the IDs of the most relevant summaries, separated by commas."
+                },
+                {
+                    "role": "user",
+                    "content": f"User query: '{user_query}'\nTranslated query: '{query_translator}'\n\nSummaries:\n{summaries_text}\n\nPlease provide the IDs of the most relevant summaries, separated by commas."
+                }
+            ],
+            model="llama-3.1-70b-versatile",
+        )
+        
+        relevant_summary_ids = chat_completion.choices[0].message.content.strip()
+        return [int(id.strip()) for id in relevant_summary_ids.split(',')]
+    
     
     async def __call__(self,user_query:str):
         #Translate the simple user query to better query

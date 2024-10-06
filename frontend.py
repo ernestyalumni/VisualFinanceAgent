@@ -1,6 +1,10 @@
 import streamlit as st
 from pipeline import VisionFinancePipeLine, EnrichedQuery, QueryImgTuple
 import asyncio
+from io import BytesIO
+import numpy as np
+from PIL import Image
+import base64
 
 @st.cache_resource
 def get_pipeline():
@@ -10,6 +14,11 @@ def get_pipeline():
 
 vfsp = get_pipeline()
 st.session_state['vfsp'] = vfsp
+
+def convert_base64_to_img(base64_str:str):
+    base64_data = base64.b64decode(base64_str)
+    image = Image.open(BytesIO(base64_data))
+    return image
 
 async def query_translator_ans(user_query):
     query_translator = await vfsp.query_translator(user_query)
@@ -48,9 +57,9 @@ async def response_from_images(enriched_queries):
 async def get_manager_response(manager_response_list,query_translator, user_query):
     relevant_response = await vfsp.manager_response(manager_response_list,query_translator, user_query)
     st.write(f"Relevant Response: {relevant_response}")
-    relevant_response = EnrichedQuery.model_validate_json(relevant_response)
+    # relevant_response = EnrichedQuery.model_validate_json(relevant_response)
     relevant_response_list = []
-    relevant_ids = [r.strip() for r in relevant_response.enriched_queries.split(",")]
+    relevant_ids = [r.strip() for r in relevant_response.split(",")]
     for rp in relevant_ids:
         relevant_response_list.append(
             manager_response_list[int(rp)]
@@ -85,6 +94,13 @@ async def main(user_input):
         final_answer = await get_final_answer(relevant_response_list,query_translator,user_input)
     
     st.write(f"Final Answer: {final_answer}")
+    
+    for rir in relevant_img_results:
+        st.write("Query: ",rir.query)
+        for rer in rir.image_base64:
+            # print(rer)
+            st.image(convert_base64_to_img(rer[0]))
+            # st.write("Answer: ",rer[1])
 
 if user_input:
     asyncio.run(main(user_input))

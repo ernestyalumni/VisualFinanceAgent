@@ -10,7 +10,7 @@ from groq import AsyncGroq
 
 QueryImgTuple = collections.namedtuple("QueryImgTuple",['query','image_base64'])
 
-class PipeLine(dspy.Module):
+class VisionFinancePipeLine(dspy.Module):
     def __init__(self):
         self.vision_index = self._get_vision_index()
         self.summary_index = _get_summary_index("visualfinanceagent/vectordb/output_imgs_2")
@@ -49,6 +49,15 @@ class PipeLine(dspy.Module):
         # return SummaryResponse.model_validate_json(chat_completion.choices[0].message.content)
         return completion.choices[0].message.content
     
+    def query_translator(self,user_query):
+        pass
+    
+    def query_enrichment(self, user_query, query_translator, summaries):
+        pass
+    
+    def manager_response(self,manager_response_list,query_translator, user_query):
+        pass
+    
     async def __call__(self,user_query:str):
         #Translate the simple user query to better query
         query_translator = self.query_translator(user_query)
@@ -57,7 +66,7 @@ class PipeLine(dspy.Module):
         
         summaries = ""
         for rs in relevant_summaries:
-            summaries+=rs.page_content + "\n"
+            summaries+=rs.page_content + "\n\n"
         
         #Based on relevant summaries, it translates the user query into three enriched queries
         enriched_queries = self.query_enrichment(user_query, query_translator, summaries)
@@ -65,7 +74,7 @@ class PipeLine(dspy.Module):
         relevant_img_results: list[QueryImgTuple] = []
         
         for eq in enriched_queries:
-            relevant_imgs = self.vision_index.search(query=eq,k=3)
+            relevant_imgs = self.vision_index.search(query=eq,k=2)
             relevant_img_results.append(
                 QueryImgTuple(query=eq,image_base64=[(i['base64'], await self.groq_response(i['base64'],eq)) for i in relevant_imgs])
             )

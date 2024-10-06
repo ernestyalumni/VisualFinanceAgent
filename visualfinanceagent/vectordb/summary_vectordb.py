@@ -14,9 +14,8 @@ from langchain.schema import Document
 import os
 import json
 
-def return_index():
+def return_index(path):
     docs = []
-    path = "visualfinanceagent/vectordb/output_imgs_2"
     for dir in os.listdir(path):
         pdfs = os.path.join(path,dir)
         for json_path in os.listdir(os.path.join(pdfs,"JSON")):

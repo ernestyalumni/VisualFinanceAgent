@@ -61,6 +61,53 @@ def evaluate_image_relevance(query, image):
     relevance = chat_completion.choices[0].message.content.strip()
     return relevance
 
+def evaluate_multiple_text_relevance_basic(
+    user_query: str,
+    texts: List[str],
+    query_translator: str,
+    model_name="llama-3.1-70b-versatile",
+    ):
+    summaries_with_ids = \
+        [f"Summary {i}: {summary}" for i, summary in enumerate(texts)]
+    summaries_text = "\n\n".join(summaries_with_ids)
+
+    client = Groq(
+        api_key=os.environ.get("GROQ_API_KEY"),
+    )
+
+    #system_content = f"You are an expert in evaluating the relevance of information to user queries. Your task is to analyze a list of summaries and determine which ones are most relevant to the user's original query and the translated query. Return only the IDs of the most relevant summaries as JSON object, separated by commas."
+    system_content = f"You are an expert in evaluating the relevance of information to user queries. Your task is to analyze a list of summaries and determine which ones are most relevant to the user's original query and the translated query. Return only the IDs of the most relevant summaries separated by commas."
+    # system_content = (
+    #     "You are an expert in evaluating the relevance of information to user "
+    #     "queries. Your task is to analyze a list of summaries and determine "
+    #     "which ones are most relevant to the user's original query and the "
+    #     "translated query. Return only the IDs of the most relevant summaries, "
+    #     "separated by commas."
+    # )
+
+    #user_content = f"User query: '{user_query}'\nTranslated query: '{query_translator}'\n\nSummaries:\n{summaries_text}\n\nPlease provide the IDs of the most relevant summaries as JSON object separated by commas."
+    user_content = f"User query: '{user_query}'\nTranslated query: '{query_translator}'\n\nSummaries:\n{summaries_text}\n\nPlease provide the IDs of the most relevant summaries separated by commas."
+
+    chat_completion = client.chat.completions.create(
+        messages=[
+            {
+                "role": "system",
+                "content": system_content
+            },
+            {
+                "role": "user",
+                "content": user_content
+            }
+        ],
+        model=model_name,
+    )
+
+    relevant_summary_ids = chat_completion.choices[0].message.content.strip()
+    relevant_summary_ids_cleaned =[int(id.strip()) for id in relevant_summary_ids.split(',')]
+    output_summaries = [texts[i] for i in relevant_summary_ids_cleaned]
+    return output_summaries
+
+
 def evaluate_multiple_text_relevance(
     query: str,
     texts: List[str],
